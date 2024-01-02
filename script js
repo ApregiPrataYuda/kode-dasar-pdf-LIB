@@ -1,0 +1,105 @@
+<!-- script approve -->
+<script>
+    const { degrees, PDFDocument, rgb, StandardFonts } = PDFLib
+    async function makeSignature() {
+ // Fetch an existing PDF document
+ var url = 'http://localhost:3000/Approval_po/public/file_user/File_pdf-240102-65937bca66c9e.pdf'
+ const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
+ // Load a PDFDocument from the existing PDF bytes
+ const pdfDoc = await PDFDocument.load(existingPdfBytes);
+ // Embed the Helvetica font
+ const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+ const TimesRomanBoldItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanBoldItalic)
+ // Get the first page of the document
+ const pages = pdfDoc.getPages();
+ const firstPage = pages[0];
+ // Fetch JPEG image
+//  const jpgUrl = 'http://localhost:3000/Approval_po/public/signature/sign_approval1.jpeg';
+//  const jpgImageBytes = await fetch(jpgUrl).then((res) => res.arrayBuffer());
+//  const jpgImage = await pdfDoc.embedJpg(jpgImageBytes);
+//  const jpgDims = jpgImage.scale(0.12);
+ //fetch image png
+  // Fetch PNG image
+  const pngUrl = 'http://localhost:3000/Approval_po/public/signature/sign_approval1.png'
+  const pngImageBytes = await fetch(pngUrl).then((res) => res.arrayBuffer())
+  const pngImage = await pdfDoc.embedPng(pngImageBytes)
+  const pngDims = pngImage.scale(0.12)
+// Get the width and height of the first page
+const { width, height } = firstPage.getSize();
+ firstPage.drawText('Rahmat susanto', {
+        x: 500,
+        y: 17,
+        size: 10,
+        // font: helveticaFont,
+        font: TimesRomanBoldItalic,
+        color: rgb(0, 0, 0),
+        //rotate: degrees(-45),
+      })
+// Add a blank page to the document
+// firstPage.drawImage(jpgImage, {
+  //  x: firstPage.getWidth() / 1 - jpgDims.width / 1,
+  //  y: firstPage.getHeight() / 15 - jpgDims.height / 2,
+//   x: 450,
+//   y: 30,
+//    width: jpgDims.width,
+//    height: jpgDims.height,
+//  });
+firstPage.drawImage(pngImage, {
+        // x: page.getWidth() / 2 - pngDims.width / 2 + 75,
+        // y: page.getHeight() / 2 - pngDims.height,
+        x: 450,
+        y: 30,
+        width: pngDims.width,
+        height: pngDims.height,
+      })
+ // Serialize the PDFDocument to bytes (a Uint8Array)
+ const pdfBytes = await pdfDoc.save();
+//  console.log(pdfBytes);
+ //cara new
+ 'use strict';
+function bufferToBase64(buf) {
+    var binstr = Array.prototype.map.call(buf, function (ch) {
+        return String.fromCharCode(ch);
+    }).join('');
+    return btoa(binstr);
+}
+var data = new Uint8Array(pdfBytes);
+var base64 = bufferToBase64(data);
+// console.log(base64);
+var formData = new FormData();
+formData.append("pdffile", base64);
+// var request = new XMLHttpRequest();
+// request.open("POST", "test.php");
+// request.send(formData);
+   // Trigger the browser to download the PDF document
+  // var x = download(pdfBytes, "sign2.pdf", "application/pdf");
+  //cara lama
+  Promise.all(formData).then((formData) => {
+//Here you could make a AJAX call to your PHP on your server
+$.ajax({
+  url: "<?= site_url('Approve_one/processsign')?>",
+  type: 'POST',
+  data: {
+    formData: formData, 
+  },
+  success: function (data) {
+    // console.log("success: " + JSON.stringify(data));
+    // if (data.success == "success") {
+    //   alert(data.success);
+    //   console.log("Success send");
+    // }
+
+    Swal.fire({
+  title: "Good job!",
+  text: "Success Sign!",
+  icon: "success"
+});
+$( '#modal-detail').modal('hide');
+
+  }
+})
+  
+}
+)}
+//}
+  </script>
